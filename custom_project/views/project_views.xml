@@ -16,7 +16,7 @@
         <field name="inherit_id" ref="project.view_project"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='user_id']" position="after">
-                <field name="monto_acumulado"/>
+                <field name="monto_acumulado" decoration-danger="1"/>
             </xpath>
         </field>
     </record>
