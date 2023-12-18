@@ -8,10 +8,11 @@
     'license': 'LGPL-3',
     'category': '',
     'depends': [
-        'project'
+        'project', 'analytic'
     ],
     'data': [
         'views/project_views.xml',
+        'views/account_account_views.xml',
     ],
     'demo': [
         
