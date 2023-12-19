@@ -13,7 +13,11 @@
                 <field name="monto_acumulado"/>
                 <field name="show_btn_to_close" invisible="1"/>
                 <field name="show_btn_reopen" invisible="1"/>
-                <field name="account_account" options='{"no_open": True, "no_create": True}'/>
+                <field name="show_account" invisible="1"/>
+                <field name="account_account"
+                       options='{"no_open": True, "no_create": True}'
+                       attrs="{'invisible' : [('show_account', '=', False)]}"
+                />
                 <button
                     attrs="{'invisible' : [('show_btn_to_close', '=', False)]}"
                     class="oe_highlight"
