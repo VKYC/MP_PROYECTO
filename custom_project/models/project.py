@@ -60,8 +60,8 @@ class ProjectProject(models.Model):
             project_id.state_project = 'close'
 
     def button_fixed_asset(self):
-        # if self.product_tmpl_id:
-        #     raise UserError(_("No se puede volver a crear el activo fijo una vez creado."))
+        if self.product_tmpl_id:
+            raise UserError(_("No se puede volver a crear el activo fijo una vez creado."))
         product_category_id = self.env['product.category'].search([('is_asset', '=', True)], limit=1)
         product_tmpl_id = self.env['product.template'].create({
             "name": self.name,
