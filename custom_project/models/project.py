@@ -1,5 +1,7 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+import logging
+_logger = logging.getLogger(__name__)
 
 # It is specified that the account will be of type Expenses ID
 ACCOUNT_ACCOUNT_TYPE_ID = 15
@@ -53,6 +55,16 @@ class ProjectProject(models.Model):
                 })
             elif len(line_ids) == 1 and line_ids[0].name == self.name and line_ids[0].account_id.id == analytic_account_id.id:
                 line_ids[0].amount = monto_acumulado
+
+    def cron_create_account_analytic_line(self):
+        records = self.browse([])
+        for record in records:
+            try:
+                record._create_account_analytic_line({})
+            except Exception as error:
+                _logger.error(f'Error al crear línea de cuenta analítica: {error}\n del projecto {record.name}')
+            else:
+                continue
 
     def compute_reopen_project(self):
         for project_id in self:

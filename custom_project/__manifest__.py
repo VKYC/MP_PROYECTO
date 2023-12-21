@@ -11,6 +11,7 @@
         'project', 'analytic', 'product', 'account'
     ],
     'data': [
+        'data/ir_cron.xml',
         'views/project_views.xml',
         'views/account_account_views.xml',
         'views/product_category_views.xml',
