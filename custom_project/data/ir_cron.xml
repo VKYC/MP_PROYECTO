@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data noupdate="1">
+    <data>
         <record id="create_account_analytic_line" model="ir.cron">
             <field name="interval_type">days</field>
             <field name="name">Crear línea de cuenta analítica por proyecto</field>
