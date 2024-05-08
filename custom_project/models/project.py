@@ -10,9 +10,9 @@ class ProjectProject(models.Model):
     _description = 'Project Project'
     
     monto_acumulado = fields.Monetary(string="Monto acumulado", currency_field="currency_id")
-    show_btn_to_close = fields.Boolean(compute='compute_close_project', default=False)
-    show_btn_reopen = fields.Boolean(compute='compute_reopen_project', default=False)
-    show_account = fields.Boolean(compute='compute_show_account', default=False)
+    show_btn_to_close = fields.Boolean(compute='compute_close_project')
+    show_btn_reopen = fields.Boolean(compute='compute_reopen_project')
+    show_account = fields.Boolean(compute='compute_show_account')
     state_project = fields.Selection(selection=[("open", "Abierto"), ("close", "Cerrado")], default="open")
     account_account = fields.Many2one(comodel_name='account.account', string='Cuenta Contable',
                                       domain="[('user_type_id', '=', " + str(ACCOUNT_ACCOUNT_TYPE_ID) + ")]")
@@ -36,7 +36,7 @@ class ProjectProject(models.Model):
     def compute_show_account(self):
         for project_id in self:
             if project_id.date:
-                project_id.show_account = True if project_id.date >= fields.Date.today() else False
+                project_id.show_account = True if project_id.date <= fields.Date.today() else False
             else:
                 project_id.show_account = False
 
@@ -44,7 +44,7 @@ class ProjectProject(models.Model):
         for project_id in self:
             if project_id.date:
                 project_id.show_btn_to_close = True if (
-                        project_id.date >= fields.Date.today() and project_id.state_project == 'open'
+                        project_id.date <= fields.Date.today() and project_id.state_project == 'open'
                 ) else False
             else:
                 project_id.show_btn_to_close = False
