@@ -30,6 +30,7 @@
             <xpath expr="//field[@name='company_id']" position="after">
                 <field name="monto_acumulado"/>
                 <field name="show_btn_to_close" invisible="1"/>
+                <field name="Show_btn_to_ubication" invisible="1"/>
                 <field name="show_btn_reopen" invisible="1"/>
                 <field name="show_account" invisible="1"/>
                 <field name="account_account"
@@ -48,6 +49,13 @@
                     attrs="{'invisible' : [('show_btn_reopen', '=', False)]}"
                     name="button_fixed_asset"
                     string="Crear Activo Fijo"
+                    type="object"
+                />
+                <button
+                    attrs="{'invisible' : [('Show_btn_to_ubication', '=', True)]}"
+                    class="oe_highlight"
+                    name="send_to_ubication"
+                    string="Enviar a ubicacion"
                     type="object"
                 />
                 <button

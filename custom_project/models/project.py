@@ -13,6 +13,7 @@ class ProjectProject(models.Model):
     
     monto_acumulado = fields.Monetary(string="Monto acumulado", currency_field="currency_id")
     show_btn_to_close = fields.Boolean(compute='compute_close_project')
+    Show_btn_to_ubication = fields.Boolean(string='compute_to_ubication')
     show_btn_reopen = fields.Boolean(compute='compute_reopen_project')
     show_account = fields.Boolean(compute='compute_show_account')
     state_project = fields.Selection(selection=[("open", "Abierto"), ("close", "Cerrado")], default="open")
@@ -109,3 +110,43 @@ class ProjectProject(models.Model):
             "categ_id": product_category_id.id,
         })
         self.product_tmpl_id = product_tmpl_id
+
+    def compute_to_ubication(self):
+        for project_id in self:
+            if project_id.date:
+                project_id.Show_btn_to_ubication = True if (
+                        project_id.date <= fields.Date.today() and
+                        project_id.state_project == 'open'
+                ) else False
+            else:
+                project_id.Show_btn_to_ubication = False
+
+    def get_stock_location(self, location_id, location_id_2):
+        stock_location = self.env['stock.location'].search([
+            ('location_id', '=', location_id),
+            ('id', '=', location_id_2)
+        ], limit=1)
+
+        return stock_location
+
+    def send_to_ubication(self):
+        for project in self:
+            specific_location = self.get_stock_location(7, 8)
+            if specific_location:
+                location_id = specific_location.id
+            else:
+                location_id = self.env['stock.location'].search([('usage', '=', 'internal')], limit=1).id
+            vals = {
+                'name': project.name,
+                'location_id': location_id,
+                'usage': 'production',
+                'employee_id': None,
+            }
+            new_location = self.env['stock.location'].create(vals)
+            return {
+                'type': 'ir.actions.act_window',
+                'res_model': 'stock.location',
+                'view_mode': 'form',
+                'res_id': new_location.id,
+                'target': 'current',
+            }
