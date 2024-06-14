@@ -13,13 +13,14 @@ class ProjectProject(models.Model):
     
     monto_acumulado = fields.Monetary(string="Monto acumulado", currency_field="currency_id")
     show_btn_to_close = fields.Boolean(compute='compute_close_project')
-    Show_btn_to_ubication = fields.Boolean(string='compute_to_ubication')
+    show_btn_to_ubication = fields.Boolean(compute='compute_to_ubication')
     show_btn_reopen = fields.Boolean(compute='compute_reopen_project')
     show_account = fields.Boolean(compute='compute_show_account')
     state_project = fields.Selection(selection=[("open", "Abierto"), ("close", "Cerrado")], default="open")
     account_account = fields.Many2one(comodel_name='account.account', string='Cuenta Contable',
                                       domain="[('user_type_id', '=', " + str(ACCOUNT_ACCOUNT_TYPE_ID) + ")]")
     product_tmpl_id = fields.Many2one(comodel_name='product.template', string='Activo fijo', readonly=True)
+    tag_ids = fields.Many2many('project.tags', relation='project_project_project_tags_rel', string='Tags')
 
     def write(self, vals):
         for project_id in self:
@@ -111,15 +112,19 @@ class ProjectProject(models.Model):
         })
         self.product_tmpl_id = product_tmpl_id
 
+    @api.depends('name', 'partner_id', 'tag_ids', 'user_id', 'date_start')
     def compute_to_ubication(self):
         for project_id in self:
-            if project_id.date:
-                project_id.Show_btn_to_ubication = True if (
-                        project_id.date <= fields.Date.today() and
-                        project_id.state_project == 'open'
-                ) else False
+            if (
+                project_id.name
+                and project_id.partner_id
+                and project_id.tag_ids
+                and project_id.user_id
+                and project_id.date_start
+            ):
+                project_id.show_btn_to_ubication = True
             else:
-                project_id.Show_btn_to_ubication = False
+                project_id.show_btn_to_ubication = False
 
     def get_stock_location(self, location_id, location_id_2):
         stock_location = self.env['stock.location'].search([
