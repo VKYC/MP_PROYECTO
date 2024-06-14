@@ -30,7 +30,7 @@
             <xpath expr="//field[@name='company_id']" position="after">
                 <field name="monto_acumulado"/>
                 <field name="show_btn_to_close" invisible="1"/>
-                <field name="Show_btn_to_ubication" invisible="1"/>
+                <field name="show_btn_to_ubication" invisible="1"/>
                 <field name="show_btn_reopen" invisible="1"/>
                 <field name="show_account" invisible="1"/>
                 <field name="account_account"
@@ -52,7 +52,7 @@
                     type="object"
                 />
                 <button
-                    attrs="{'invisible' : [('Show_btn_to_ubication', '=', True)]}"
+                    attrs="{'invisible' : [('show_btn_to_ubication', '=', False)]}"
                     class="oe_highlight"
                     name="send_to_ubication"
                     string="Enviar a ubicacion"
