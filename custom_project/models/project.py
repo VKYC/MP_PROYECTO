@@ -10,7 +10,7 @@ ACCOUNT_ACCOUNT_TYPE_ID = 15
 class ProjectProject(models.Model):
     _inherit = 'project.project'
     _description = 'Project Project'
-    
+
     monto_acumulado = fields.Monetary(string="Monto acumulado", currency_field="currency_id")
     show_btn_to_close = fields.Boolean(compute='compute_close_project')
     show_btn_to_ubication = fields.Boolean(compute='compute_to_ubication')
@@ -21,6 +21,8 @@ class ProjectProject(models.Model):
                                       domain="[('user_type_id', '=', " + str(ACCOUNT_ACCOUNT_TYPE_ID) + ")]")
     product_tmpl_id = fields.Many2one(comodel_name='product.template', string='Activo fijo', readonly=True)
     tag_ids = fields.Many2many('project.tags', relation='project_project_project_tags_rel', string='Tags')
+    stock_location_id = fields.Many2one('stock.location', string='Ubicacion en inventario', compute='_compute_stock_location', store=True, readonly=False)
+
 
     def write(self, vals):
         for project_id in self:
@@ -33,13 +35,13 @@ class ProjectProject(models.Model):
         res = super(ProjectProject, self).write(vals)
         self._create_account_analytic_line(vals)
         return res
-    
+
     @api.model
     def create(self, vals):
         res = super(ProjectProject, self).create(vals)
         res._create_account_analytic_line(vals)
         return res
-    
+
     def _create_account_analytic_line(self, vals):
         analytic_account = vals.get('analytic_account_id', self.analytic_account_id.id)
         monto_acumulado = vals.get('monto_acumulado', self.monto_acumulado)
@@ -134,24 +136,53 @@ class ProjectProject(models.Model):
 
         return stock_location
 
-    def send_to_ubication(self):
+    @api.depends('name')
+    def _compute_stock_location(self):
         for project in self:
             specific_location = self.get_stock_location(7, 8)
             if specific_location:
                 location_id = specific_location.id
             else:
                 location_id = self.env['stock.location'].search([('usage', '=', 'internal')], limit=1).id
-            vals = {
-                'name': project.name,
-                'location_id': location_id,
-                'usage': 'production',
-                'employee_id': None,
-            }
-            new_location = self.env['stock.location'].create(vals)
+            existing_location = self.env['stock.location'].search([
+                ('name', '=', project.name),
+                ('location_id', '=', location_id),
+                ('usage', '=', 'production')
+            ], limit=1)
+            project.stock_location_id = existing_location if existing_location else False
+
+    def send_to_ubication(self):
+        for project in self:
+            if project.stock_location_id:
+                raise UserError('El proyecto ya existe en una determinada ubicación y se ha ligado automáticamente a la ubicación que está relacionada una vez que se ejecuto "enviar a ubicacion".')
+            else:
+                specific_location = self.get_stock_location(7, 8)
+                if specific_location:
+                    location_id = specific_location.id
+                else:
+                    location_id = self.env['stock.location'].search([('usage', '=', 'internal')], limit=1).id
+                existing_location = self.env['stock.location'].search([
+                    ('name', '=', project.name),
+                    ('location_id', '=', location_id),
+                    ('usage', '=', 'production')
+                ], limit=1)
+                if existing_location:
+                    project.stock_location_id = existing_location
+                    raise UserError('El proyecto ya existe en una determinada ubicación y se ha ligado automáticamente a la ubicación que está relacionada una vez que se ejecuto "enviar a ubicacion".')
+                else:
+                    vals = {
+                        'name': project.name,
+                        'location_id': location_id,
+                        'usage': 'production',
+                        'employee_id': None,
+                    }
+                    new_location = self.env['stock.location'].create(vals)
+                    project.stock_location_id = new_location
+
             return {
                 'type': 'ir.actions.act_window',
                 'res_model': 'stock.location',
                 'view_mode': 'form',
-                'res_id': new_location.id,
+                'res_id': project.stock_location_id.id,
                 'target': 'current',
             }
