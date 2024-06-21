@@ -22,6 +22,7 @@ class ProjectProject(models.Model):
     product_tmpl_id = fields.Many2one(comodel_name='product.template', string='Activo fijo', readonly=True)
     tag_ids = fields.Many2many('project.tags', relation='project_project_project_tags_rel', string='Tags')
     stock_location_id = fields.Many2one('stock.location', string='Ubicacion en inventario', compute='_compute_stock_location', store=True, readonly=False)
+    analytic_account_id = fields.Many2one('account.analytic.account', string='Cuenta Analítica', compute='_compute_analytic_account', store=True, readonly=False)
 
 
     def write(self, vals):
@@ -184,5 +185,30 @@ class ProjectProject(models.Model):
                 'res_model': 'stock.location',
                 'view_mode': 'form',
                 'res_id': project.stock_location_id.id,
+                'target': 'current',
+            }
+
+    def send_to_analytic_account(self):
+        for project in self:
+            if project.analytic_account_id:
+                raise UserError(_('El proyecto ya tiene una cuenta analítica asociada.'))
+            else:
+                existing_analytic_account = self.env['account.analytic.account'].search([('name', '=', project.name)], limit=1)
+                if existing_analytic_account:
+                    project.analytic_account_id = existing_analytic_account
+                    raise UserError(_('El proyecto ya tiene una cuenta analítica existente y se ha asociado automáticamente.'))
+                else:
+                    vals = {
+                        'name': project.name,
+                        'company_id': project.company_id.id,
+                    }
+                    new_analytic_account = self.env['account.analytic.account'].create(vals)
+                    project.analytic_account_id = new_analytic_account
+
+            return {
+                'type': 'ir.actions.act_window',
+                'res_model': 'account.analytic.account',
+                'view_mode': 'form',
+                'res_id': project.analytic_account_id.id,
                 'target': 'current',
             }
