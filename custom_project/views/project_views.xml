@@ -40,6 +40,9 @@
                 <field name="stock_location_id"
                         options='{"no_create": True}'
                 />
+                <field name="analytic_account_id"
+                options='{"no_create": True}'
+                />
                 <button
                     attrs="{'invisible' : [('show_btn_to_close', '=', False)]}"
                     class="oe_highlight"
