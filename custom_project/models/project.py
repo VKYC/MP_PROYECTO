@@ -118,7 +118,9 @@ class ProjectProject(models.Model):
     @api.depends('name', 'partner_id', 'tag_ids', 'user_id', 'date_start')
     def compute_to_ubication(self):
         for project_id in self:
-            if (
+            if project_id.stock_location_id:
+                project_id.show_btn_to_ubication = False
+            elif (
                 project_id.name
                 and project_id.partner_id
                 and project_id.tag_ids
