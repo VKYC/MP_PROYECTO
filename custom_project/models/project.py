@@ -14,6 +14,7 @@ class ProjectProject(models.Model):
     monto_acumulado = fields.Monetary(string="Monto acumulado", currency_field="currency_id")
     show_btn_to_close = fields.Boolean(compute='compute_close_project')
     show_btn_to_ubication = fields.Boolean(compute='compute_to_ubication')
+    show_btn_to_analytic_account = fields.Boolean(compute='compute_to_analytic_account')
     show_btn_reopen = fields.Boolean(compute='compute_reopen_project')
     show_account = fields.Boolean(compute='compute_show_account')
     state_project = fields.Selection(selection=[("open", "Abierto"), ("close", "Cerrado")], default="open")
@@ -23,6 +24,7 @@ class ProjectProject(models.Model):
     tag_ids = fields.Many2many('project.tags', relation='project_project_project_tags_rel', string='Tags')
     stock_location_id = fields.Many2one('stock.location', string='Ubicacion en inventario', compute='_compute_stock_location', store=True, readonly=False)
     analytic_account_id = fields.Many2one('account.analytic.account', string='Cuenta Analítica', compute='_compute_analytic_account', store=True, readonly=False)
+    info_message_analytic = fields.Html(string='Información de Cuenta Analítica', compute='_compute_info_message', readonly=True, sanitize=False)
 
 
     def write(self, vals):
@@ -118,7 +120,9 @@ class ProjectProject(models.Model):
     @api.depends('name', 'partner_id', 'tag_ids', 'user_id', 'date_start')
     def compute_to_ubication(self):
         for project_id in self:
-            if (
+            if project_id.stock_location_id:
+                project_id.show_btn_to_ubication = False
+            elif (
                 project_id.name
                 and project_id.partner_id
                 and project_id.tag_ids
@@ -128,6 +132,16 @@ class ProjectProject(models.Model):
                 project_id.show_btn_to_ubication = True
             else:
                 project_id.show_btn_to_ubication = False
+
+    @api.depends('analytic_account_id', 'name', 'partner_id')
+    def compute_to_analytic_account(self):
+        for project_id in self:
+            if project_id.analytic_account_id:
+                project_id.show_btn_to_analytic_account = False
+            elif project_id.name and project_id.partner_id:
+                project_id.show_btn_to_analytic_account = True
+            else:
+                project_id.show_btn_to_analytic_account = False
 
     def get_stock_location(self, location_id, location_id_2):
         stock_location = self.env['stock.location'].search([
@@ -188,27 +202,70 @@ class ProjectProject(models.Model):
                 'target': 'current',
             }
 
+    @api.depends('name', 'partner_id')
+    def _compute_analytic_account(self):
+        for project in self:
+            if project.name and project.partner_id:
+                existing_analytic_account = self.env['account.analytic.account'].search([
+                    ('name', '=', project.name),
+                    ('partner_id', '=', project.partner_id.id),
+                ], limit=1)
+
+                if existing_analytic_account:
+                    project.analytic_account_id = existing_analytic_account.id
+                else:
+                    project.analytic_account_id = False
+            else:
+                project.analytic_account_id = False
+
+    @api.depends('name', 'partner_id')
+    def _compute_analytic_account(self):
+        for project in self:
+            if project.name and project.partner_id:
+                existing_analytic_account = self.env['account.analytic.account'].search([
+                    ('name', '=', project.name),
+                    ('partner_id', '=', project.partner_id.id),
+                ], limit=1)
+                
+                if existing_analytic_account:
+                    project.analytic_account_id = existing_analytic_account.id
+                else:
+                    project.analytic_account_id = False
+            else:
+                project.analytic_account_id = False
+
     def send_to_analytic_account(self):
         for project in self:
             if project.analytic_account_id:
                 raise UserError(_('El proyecto ya tiene una cuenta analítica asociada.'))
             else:
-                existing_analytic_account = self.env['account.analytic.account'].search([('name', '=', project.name)], limit=1)
-                if existing_analytic_account:
-                    project.analytic_account_id = existing_analytic_account
-                    raise UserError(_('El proyecto ya tiene una cuenta analítica existente y se ha asociado automáticamente.'))
-                else:
-                    vals = {
-                        'name': project.name,
-                        'company_id': project.company_id.id,
-                    }
-                    new_analytic_account = self.env['account.analytic.account'].create(vals)
-                    project.analytic_account_id = new_analytic_account
+                if project.name and project.partner_id:
+                    existing_analytic_account = self.env['account.analytic.account'].search([
+                        ('name', '=', project.name),
+                        ('partner_id', '=', project.partner_id.id),
+                    ], limit=1)
 
-            return {
-                'type': 'ir.actions.act_window',
-                'res_model': 'account.analytic.account',
-                'view_mode': 'form',
-                'res_id': project.analytic_account_id.id,
-                'target': 'current',
-            }
+                    if existing_analytic_account:
+                        project.analytic_account_id = existing_analytic_account.id
+                    else:
+                        vals = {
+                            'name': project.name,
+                            'partner_id': project.partner_id.id,
+                        }
+                        new_analytic_account = self.env['account.analytic.account'].create(vals)
+                        project.analytic_account_id = new_analytic_account.id
+
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'account.analytic.account',
+            'view_mode': 'form',
+            'res_id': project.analytic_account_id.id,
+            'target': 'current',
+        }
+
+    def _compute_info_message(self):
+        for project in self:
+            if project.analytic_account_id:
+                project.info_message_analytic = ("¡¡Atencion!!. Si se necesita configurar cuenta analítica haga click arriba en el nombre de la cuenta analitica.")
+            else:
+                project.info_message_analytic = ("¡¡Atencion!!. No hay cuenta analítica relacionada. dar click el botón de 'Crear cuenta analitica' para crear una o relacionarla.")

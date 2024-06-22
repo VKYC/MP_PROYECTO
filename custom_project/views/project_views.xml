@@ -31,6 +31,7 @@
                 <field name="monto_acumulado"/>
                 <field name="show_btn_to_close" invisible="1"/>
                 <field name="show_btn_to_ubication" invisible="1"/>
+                <field name="show_btn_to_analytic_account" invisible="1"/>
                 <field name="show_btn_reopen" invisible="1"/>
                 <field name="show_account" invisible="1"/>
                 <field name="account_account"
@@ -43,6 +44,7 @@
                 <field name="analytic_account_id"
                 options='{"no_create": True}'
                 />
+                <field name="info_message_analytic" />
                 <button
                     attrs="{'invisible' : [('show_btn_to_close', '=', False)]}"
                     class="oe_highlight"
@@ -70,6 +72,13 @@
                     name="reopen_project"
                     string="Reabrir obra"
                     type="object"
+                />
+                <button
+                attrs="{'invisible' : [('show_btn_to_analytic_account', '=', False)]}"
+                class="oe_highlight"
+                name="send_to_analytic_account"
+                string="Crear cuenta analituca"
+                type="object"
                 />
             </xpath>
         </field>
