@@ -188,27 +188,49 @@ class ProjectProject(models.Model):
                 'target': 'current',
             }
 
+    @api.depends('name', 'partner_id')
+    def _compute_analytic_account(self):
+        for project in self:
+            if project.name and project.partner_id:
+                existing_analytic_account = self.env['account.analytic.account'].search([
+                    ('name', '=', project.name),
+                    ('partner_id', '=', project.partner_id.id),
+                ], limit=1)
+
+                if existing_analytic_account:
+                    project.analytic_account_id = existing_analytic_account.id
+                else:
+                    project.analytic_account_id = False
+            else:
+                project.analytic_account_id = False
+
     def send_to_analytic_account(self):
         for project in self:
             if project.analytic_account_id:
                 raise UserError(_('El proyecto ya tiene una cuenta analítica asociada.'))
             else:
-                existing_analytic_account = self.env['account.analytic.account'].search([('name', '=', project.name)], limit=1)
-                if existing_analytic_account:
-                    project.analytic_account_id = existing_analytic_account
-                    raise UserError(_('El proyecto ya tiene una cuenta analítica existente y se ha asociado automáticamente.'))
-                else:
-                    vals = {
-                        'name': project.name,
-                        'company_id': project.company_id.id,
-                    }
-                    new_analytic_account = self.env['account.analytic.account'].create(vals)
-                    project.analytic_account_id = new_analytic_account
+                if project.name and project.partner_id:
+                    existing_analytic_account = self.env['account.analytic.account'].search([
+                        ('name', '=', project.name),
+                        ('partner_id', '=', project.partner_id.id),
+                    ], limit=1)
 
-            return {
-                'type': 'ir.actions.act_window',
-                'res_model': 'account.analytic.account',
-                'view_mode': 'form',
-                'res_id': project.analytic_account_id.id,
-                'target': 'current',
-            }
+                    if existing_analytic_account:
+                        project.analytic_account_id = existing_analytic_account.id
+                        raise UserError(_('Se ha encontrado una cuenta analítica existente y se ha asociado automáticamente.'))
+                    else:
+                        vals = {
+                            'name': project.name,
+                            'partner_id': project.partner_id.id,
+                            'company_id': project.company_id.id,
+                        }
+                        new_analytic_account = self.env['account.analytic.account'].create(vals)
+                        project.analytic_account_id = new_analytic_account.id
+
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'account.analytic.account',
+            'view_mode': 'form',
+            'res_id': project.analytic_account_id.id,
+            'target': 'current',
+        }
