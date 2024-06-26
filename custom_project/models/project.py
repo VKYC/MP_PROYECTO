@@ -167,23 +167,23 @@ class ProjectProject(models.Model):
             project.stock_location_id = existing_location if existing_location else False
 
     def send_to_ubication(self):
-        for project in self:
+        for project in self.sudo():
             if project.stock_location_id:
-                raise UserError('El proyecto ya existe en una determinada ubicación y se ha ligado automáticamente a la ubicación que está relacionada una vez que se ejecuto "enviar a ubicacion".')
+                raise UserError('El proyecto ya existe en una determinada ubicación y se ha ligado automáticamente a la ubicación que está relacionada una vez que se ejecutó "enviar a ubicación".')
             else:
                 specific_location = self.get_stock_location(7, 8)
                 if specific_location:
                     location_id = specific_location.id
                 else:
-                    location_id = self.env['stock.location'].search([('usage', '=', 'internal')], limit=1).id
-                existing_location = self.env['stock.location'].search([
+                    location_id = self.env['stock.location'].sudo().search([('usage', '=', 'internal')], limit=1).id
+                existing_location = self.env['stock.location'].sudo().search([
                     ('name', '=', project.name),
                     ('location_id', '=', location_id),
                     ('usage', '=', 'production')
                 ], limit=1)
                 if existing_location:
                     project.stock_location_id = existing_location
-                    raise UserError('El proyecto ya existe en una determinada ubicación y se ha ligado automáticamente a la ubicación que está relacionada una vez que se ejecuto "enviar a ubicacion".')
+                    raise UserError('El proyecto ya existe en una determinada ubicación y se ha ligado automáticamente a la ubicación que está relacionada una vez que se ejecutó "enviar a ubicación".')
                 else:
                     vals = {
                         'name': project.name,
@@ -191,7 +191,7 @@ class ProjectProject(models.Model):
                         'usage': 'production',
                         'employee_id': None,
                     }
-                    new_location = self.env['stock.location'].create(vals)
+                    new_location = self.env['stock.location'].sudo().create(vals)
                     project.stock_location_id = new_location
 
             return {
