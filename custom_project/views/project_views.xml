@@ -63,7 +63,7 @@
                     attrs="{'invisible' : [('show_btn_to_ubication', '=', False)]}"
                     class="oe_highlight"
                     name="send_to_ubication"
-                    string="Enviar a ubicacion"
+                    string="Enviar a ubicación"
                     type="object"
                 />
                 <button
@@ -77,7 +77,7 @@
                 attrs="{'invisible' : [('show_btn_to_analytic_account', '=', False)]}"
                 class="oe_highlight"
                 name="send_to_analytic_account"
-                string="Crear cuenta analituca"
+                string="Crear cuenta analitica"
                 type="object"
                 />
             </xpath>
